@@ -1,0 +1,3 @@
+pydantic
+redis==4.5.4
+fakeredis==2.10.3

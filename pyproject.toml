@@ -9,6 +9,12 @@ description = "engines for connecting messages to/from mkite"
 authors = [{name = "Daniel Schwalbe-Koda", email = "dskoda@llnl.gov"}]
 readme = "README.md"
 requires-python = ">=3.8"
+keywords = ["workflow", "materials-science"]
+dependencies = [
+    "pydantic",
+    "redis",
+    "fakeredis",
+]
 
 [tool.setuptools]
 packages = ["mkite_engines"]
