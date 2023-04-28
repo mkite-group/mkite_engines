@@ -1,5 +1,5 @@
 <div align="center">
-  <img src=docs/_static/mkite-engines.svg width="400"><br>
+  <img src="https://raw.githubusercontent.com/mkite-group/mkite_engines/main/docs/_static/mkite-engines.svg" width="400"><br>
 </div>
 
 # mkite_engines
