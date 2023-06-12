@@ -91,4 +91,8 @@ class BaseConsumer(BaseEngine):
     def get_info(self, queue: str, info_cls=JobInfo):
         """Get a JobInfo from the queue"""
         msg = self.get(queue)
+
+        if msg is None:
+            return
+
         return info_cls.decode(msg)

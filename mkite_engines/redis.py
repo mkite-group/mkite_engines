@@ -99,6 +99,9 @@ class RedisProducer(RedisEngine, BaseProducer):
 
 class RedisConsumer(RedisEngine, BaseConsumer):
     def get(self, queue: str, status: str = Status.DOING.value):
+        if queue not in self.list_queue_names():
+            return None
+
         queue = self.format_queue_name(queue)
         key = self.r.lpop(queue).decode()
         msg = self.r.hget(key, "msg")
