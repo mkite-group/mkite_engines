@@ -28,11 +28,13 @@ class LocalEngine(BaseEngine):
         root_path: os.PathLike,
         move: bool = False,
         return_abspath: bool = True,
+        queue_prefix: str = "queue:",
     ):
         self.root_path = os.path.abspath(root_path)
         self.mkdir(self.root_path)
         self.move = move
         self.return_abspath = return_abspath
+        self.qprefix = queue_prefix
 
     def __len__(self):
         return len(self.queues)
@@ -45,6 +47,9 @@ class LocalEngine(BaseEngine):
     def add_queue(self, name: str):
         if isinstance(name, Status):
             name = name.value
+
+        if not self.is_queue(name):
+            name = self.format_queue_name(name)
 
         if name not in self.queues:
             self.setup_path(name)
@@ -64,6 +69,13 @@ class LocalEngine(BaseEngine):
         os.mkdir(path)
 
     def delete(self, path: os.PathLike):
+        if not os.path.isabs(path):
+            path = self.abspath(path)
+
+        elif not str(path).startswith(self.root_path):
+            raise ValueError("Not allowed to delete a file outside \
+                of the path of the queue.")
+
         if not os.path.exists(path):
             raise FileNotFoundError(f"Path {path} does not exist")
 
@@ -97,12 +109,17 @@ class LocalEngine(BaseEngine):
 
         return dst
 
+    def list_path(self, path: os.PathLike):
+        return [entry for entry in os.listdir(path) if not entry.startswith(".")]
+
     def remove_path(self, item: os.PathLike):
         shutil.rmtree(item)
 
     def get_queue_path(self, queue: str) -> str:
         if isinstance(queue, Status):
             queue = queue.value
+
+        queue = self.format_queue_name(queue)
 
         if queue not in self.queues:
             raise ValueError(f"Invalid queue {queue}")
@@ -112,18 +129,22 @@ class LocalEngine(BaseEngine):
     def list_queue(self, queue: str) -> List[str]:
         """Get `n` items from the queue"""
         path = self.get_queue_path(queue)
-        return os.listdir(path)
+        return self.list_path(path)
 
     def list_queue_names(self) -> List[str]:
         return [
-            f
-            for f in os.listdir(self.root_path)
-            if os.path.isdir(os.path.join(self.root_path, f))
+            self.remove_queue_prefix(f)
+            for f in self.list_path(self.root_path)
+            if os.path.isdir(os.path.join(self.root_path, f)) and self.is_queue(f)
         ]
 
     @property
     def queues(self) -> List[str]:
         return self.list_queue_names()
+
+    def set_status(self, key: str, status: str = Status.DOING.value):
+        src = self.abspath(key)
+        return self.move_path(status, src)
 
 
 class LocalProducer(LocalEngine, BaseProducer):
@@ -174,23 +195,24 @@ class LocalProducer(LocalEngine, BaseProducer):
 class LocalConsumer(LocalEngine, BaseConsumer):
     """Consumer that uses folders as queue"""
 
-    def get(self, queue: str):
+    def get(self, queue: str) -> (str, str):
         """Get an item from the queue"""
         path = self.get_queue_path(queue)
 
-        entries = [entry for entry in os.listdir(path) if not entry.startswith(".")]
+        entries = self.list_path(path)
 
         if len(entries) == 0:
-            return None
+            return None, None
 
         item = entries[0]
+        key = os.path.join(queue, item)
 
         if self.return_abspath:
-            return os.path.join(path, item)
+            return key, os.path.join(path, item)
 
-        return item
+        return key, item
 
-    def get_n(self, queue: str, n: int = 1000):
+    def get_n(self, queue: str, n: int = 1000) -> (str, str):
         """Get `n` items from the queue"""
         path = self.get_queue_path(queue)
 
@@ -202,21 +224,25 @@ class LocalConsumer(LocalEngine, BaseConsumer):
             if i >= n:
                 break
 
-            item = entry.name
+            key = entry.name
 
             if self.return_abspath:
-                item = os.path.join(path, item)
+                item = os.path.join(path, key)
+            else:
+                item = key
 
-            yield item
+            yield key, item
 
             i = i + 1
 
-    def get_info(self, queue: str, info_cls=JobInfo):
-        """Get a JobInfo from the queue"""
-        msg = self.get(queue)
-        if msg is None:
-            return None
+        return None, None
 
-        info = info_cls.from_json(msg)
-        self.delete(msg)
-        return info
+    def get_info(self, queue: str, info_cls=JobInfo) -> (str, Union[JobInfo, JobResults]):
+        """Get a JobInfo from the queue"""
+        key, path = self.get(queue)
+        if path is None:
+            return None, None
+
+        info = info_cls.from_json(path)
+
+        return path, info

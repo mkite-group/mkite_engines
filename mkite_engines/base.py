@@ -1,6 +1,6 @@
 import os
 from enum import Enum
-from typing import List, Dict
+from typing import List, Dict, Union
 from abc import ABC, abstractmethod
 from mkite_core.external import load_config
 
@@ -25,6 +25,14 @@ class BaseEngine(ABC):
 
     SETTINGS_CLS = EngineSettings
 
+    def __init__(
+        self,
+        *args,
+        queue_prefix: str = "queue:",
+        **kwargs
+    ):
+        self.qprefix = queue_prefix
+
     @classmethod
     def from_settings(cls, settings: EngineSettings) -> "BaseEngine":
         """Creates the engine from a pydantic EngineSettings"""
@@ -41,6 +49,18 @@ class BaseEngine(ABC):
         """Creates the engine from a configuration file"""
         settings = cls.SETTINGS_CLS.from_file(filename)
         return cls.from_settings(settings)
+
+    def format_queue_name(self, queue: str):
+        if self.is_queue(queue):
+            return queue
+
+        return self.qprefix + queue
+
+    def remove_queue_prefix(self, queue: str):
+        return queue.replace(self.qprefix, "")
+
+    def is_queue(self, key: str) -> bool:
+        return key.startswith(self.qprefix)
 
     @abstractmethod
     def list_queue(self, queue: str) -> List[str]:
@@ -62,6 +82,14 @@ class BaseEngine(ABC):
         """Returns True if `item` is an instance of JobInfo or JobResults"""
         return isinstance(item, (JobInfo, JobResults))
 
+    @abstractmethod
+    def add_queue(self, name: str):
+        """Creates a new queue in the engine"""
+
+    @abstractmethod
+    def delete(self, key: str):
+        """Deletes an item indexed by `key` from the engine"""
+
 
 class BaseProducer(BaseEngine):
     @abstractmethod
@@ -74,25 +102,35 @@ class BaseProducer(BaseEngine):
 
 class BaseConsumer(BaseEngine):
     @abstractmethod
-    def get(self, queue: str):
+    def get(self, queue: str) -> (str, str):
         """Get an item from the queue"""
 
-    def get_n(self, queue: str, n: int = 1000):
+    def pop(self, queue: str) -> (str, str):
+        key, item = self.get(queue)
+
+        if key is not None:
+            self.delete(key)
+
+        return key, item
+
+    def get_n(self, queue: str, n: int = 1000) -> (str, str):
         """Get n items from the queue"""
         i = 0
         while i < n:
-            item = self.get(queue)
+            key, item = self.get(queue)
             if not item:
                 break
 
-            yield item
+            yield key, item
             i = i + 1
 
-    def get_info(self, queue: str, info_cls=JobInfo):
+        return None, None
+
+    def get_info(self, queue: str, info_cls=JobInfo) -> (str, Union[JobInfo, JobResults]):
         """Get a JobInfo from the queue"""
-        msg = self.get(queue)
+        key, item = self.get(queue)
 
-        if msg is None:
-            return
+        if item is None:
+            return None, None
 
-        return info_cls.decode(msg)
+        return key, info_cls.decode(item)

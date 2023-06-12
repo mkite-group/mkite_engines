@@ -56,15 +56,6 @@ class RedisEngine(BaseEngine):
         self.r = redis.Redis(host=host, port=port, password=password, **kwargs)
         self.qprefix = queue_prefix
 
-    def format_queue_name(self, queue: str):
-        if self.is_queue(queue):
-            return queue
-
-        return self.qprefix + queue
-
-    def is_queue(self, key: str) -> bool:
-        return self.qprefix in key
-
     def list_queue(self, queue: str) -> List[str]:
         queue = self.format_queue_name(queue)
         items = self.r.lrange(queue, 0, -1)
@@ -73,7 +64,7 @@ class RedisEngine(BaseEngine):
     def list_queue_names(self) -> List[str]:
         queues = self.r.keys(self.qprefix + "*")
         queues = [k.decode() for k in queues]
-        queues = [k.replace(self.qprefix, "") for k in queues]
+        queues = [self.remove_queue_prefix(k) for k in queues]
         return queues
 
     def add_queue(self, name: str):
@@ -81,6 +72,12 @@ class RedisEngine(BaseEngine):
         This method exists for compatibility with other engines.
         """
         pass
+
+    def set_status(self, key: str, status: str = Status.DOING.value):
+        self.r.hset(key, "status", status)
+
+    def delete(self, key: str):
+        self.r.delete(key)
 
 
 class RedisProducer(RedisEngine, BaseProducer):
@@ -107,12 +104,12 @@ class RedisProducer(RedisEngine, BaseProducer):
 
 
 class RedisConsumer(RedisEngine, BaseConsumer):
-    def get(self, queue: str, status: str = Status.DOING.value):
+    def get(self, queue: str) -> (str, str):
         if queue not in self.list_queue_names():
-            return None
+            return None, None
 
         queue = self.format_queue_name(queue)
         key = self.r.lpop(queue).decode()
         msg = self.r.hget(key, "msg")
-        self.r.hset(key, "status", status)
-        return msg
+
+        return key, msg

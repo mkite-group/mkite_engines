@@ -24,145 +24,133 @@ def get_info():
     )
 
 
-@patch("redis.Redis", fakeredis.FakeStrictRedis)
 class TestRedisEngine(ut.TestCase):
+    @patch("redis.Redis", fakeredis.FakeStrictRedis)
     def setUp(self):
         self.settings = RedisEngineSettings()
+        self.engine = RedisEngine.from_settings(self.settings)
 
-    def get_engine(self):
-        return RedisEngine.from_settings(self.settings)
-
-    def test_init(self):
-        engine = self.get_engine()
+    def tearDown(self):
+        self.engine.r.flushall()
 
     def test_format_queue_name(self):
-        engine = self.get_engine()
-
         queue = "test"
-        expected = engine.qprefix + queue
-        returned = engine.format_queue_name(queue)
+        expected = self.engine.qprefix + queue
+        returned = self.engine.format_queue_name(queue)
         self.assertEqual(expected, returned)
 
-        queue = f"{engine.qprefix}test2"
+        queue = f"{self.engine.qprefix}test2"
         expected = queue
-        returned = engine.format_queue_name(queue)
+        returned = self.engine.format_queue_name(queue)
         self.assertEqual(expected, returned)
 
     def test_is_queue(self):
-        engine = self.get_engine()
-
         queue = "test"
-        self.assertFalse(engine.is_queue(queue))
+        self.assertFalse(self.engine.is_queue(queue))
 
-        queue = f"{engine.qprefix}test2"
-        self.assertTrue(engine.is_queue(queue))
+        queue = f"{self.engine.qprefix}test2"
+        self.assertTrue(self.engine.is_queue(queue))
 
     def test_list_queue(self):
-        engine = self.get_engine()
-        queue = f"{engine.qprefix}test"
+        queue = f"{self.engine.qprefix}test"
 
         expected = []
-        returned = engine.list_queue(queue)
+        returned = self.engine.list_queue(queue)
         self.assertEqual(returned, expected)
 
         expected = ["a", "b", "c"]
-        engine.r.rpush(queue, *expected)
-        returned = engine.list_queue(queue)
+        self.engine.r.rpush(queue, *expected)
+        returned = self.engine.list_queue(queue)
         self.assertEqual(returned, expected)
 
     def test_list_queue_names(self):
-        engine = self.get_engine()
-
-        returned = engine.list_queue_names()
+        returned = self.engine.list_queue_names()
         self.assertEqual(returned, [])
 
         N_QUEUES = 4
-        queues = [f"{engine.qprefix}{i}" for i in range(N_QUEUES)]
+        queues = [f"{self.engine.qprefix}{i}" for i in range(N_QUEUES)]
         for q in queues:
-            engine.r.rpush(q, "item")
+            self.engine.r.rpush(q, "item")
 
         expected = [f"{i}" for i in range(N_QUEUES)]
-        returned = engine.list_queue_names()
+        returned = self.engine.list_queue_names()
         self.assertEqual(returned, expected)
 
 
-@patch("redis.Redis", fakeredis.FakeStrictRedis)
 class TestRedisProducer(ut.TestCase):
+    @patch("redis.Redis", fakeredis.FakeStrictRedis)
     def setUp(self):
         self.settings = RedisEngineSettings()
+        self.prod = RedisProducer.from_settings(self.settings)
 
-    def get_producer(self):
-        return RedisProducer.from_settings(self.settings)
+    def tearDown(self):
+        self.prod.r.flushall()
 
     def test_push(self):
-        pub = self.get_producer()
-        queue = f"{pub.qprefix}test"
+        queue = f"{self.prod.qprefix}test"
         item = "test_item"
 
-        pub.push(queue, item)
-        returned = pub.r.lpop(queue).decode()
+        self.prod.push(queue, item)
+        returned = self.prod.r.lpop(queue).decode()
 
         self.assertEqual(returned, item)
 
     def test_push_info(self):
-        pub = self.get_producer()
         info = get_info()
         key = info.uuid
 
-        queue = f"{pub.qprefix}test"
+        queue = f"{self.prod.qprefix}test"
 
-        pub.push_info(queue, info)
+        self.prod.push_info(queue, info)
 
         expected = [key]
-        returned = [item.decode() for item in pub.r.lrange(queue, 0, -1)]
+        returned = [item.decode() for item in self.prod.r.lrange(queue, 0, -1)]
         self.assertEqual(expected, returned)
 
-        status = pub.r.hget(key, "status").decode()
+        status = self.prod.r.hget(key, "status").decode()
         self.assertEqual(status, Status.READY.value)
 
-        msg = pub.r.hget(key, "msg")
+        msg = self.prod.r.hget(key, "msg")
         self.assertEqual(msg, info.encode())
 
 
-@patch("redis.Redis", fakeredis.FakeStrictRedis)
 class TestRedisConsumer(ut.TestCase):
+    @patch("redis.Redis", fakeredis.FakeStrictRedis)
     def setUp(self):
         self.settings = RedisEngineSettings()
+        self.prod = RedisProducer.from_settings(self.settings)
+        self.cons = RedisConsumer.from_settings(self.settings)
+        self.cons.r = self.prod.r
 
-    def get_consumer(self):
-        return RedisConsumer.from_settings(self.settings)
-
-    def get_producer(self):
-        return RedisProducer.from_settings(self.settings)
+    def tearDown(self):
+        self.prod.r.flushall()
+        self.cons.r.flushall()
 
     def test_get(self):
-        cons = self.get_consumer()
-        pub = self.get_producer()
-        cons.r = pub.r
-        queue = f"{cons.qprefix}test"
+        queue = "test"
 
         info = get_info()
         key = info.uuid
-        pub.push_info(queue, info)
+        self.prod.push_info(queue, info)
 
-        status = Status.DOING.value
-        msg = cons.get(queue, status=status)
+        status = Status.READY.value
+        returned_key, msg = self.cons.get(queue)
+
+        self.assertEqual(key, returned_key)
 
         info_str = info.encode()
         self.assertEqual(msg, info_str)
 
-        new_status = cons.r.hget(key, "status").decode()
+        new_status = self.cons.r.hget(key, "status").decode()
         self.assertEqual(status, new_status)
 
     def test_get_info(self):
-        cons = self.get_consumer()
-        pub = self.get_producer()
-        cons.r = pub.r
-        queue = f"{cons.qprefix}test"
+        queue = "test"
 
         info = get_info()
         key = info.uuid
-        pub.push_info(queue, info)
+        self.prod.push_info(queue, info)
 
-        new_info = cons.get_info(queue)
+        new_key, new_info = self.cons.get_info(queue)
+        self.assertEqual(key, new_key)
         self.assertEqual(info, new_info)
