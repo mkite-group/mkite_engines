@@ -89,7 +89,10 @@ class RedisProducer(RedisEngine, BaseProducer):
         return self.r.rpush(queue, item)
 
     def push_info(
-        self, queue: str, info: Union[JobInfo, JobResults], status=Status.READY.value
+        self,
+        queue: str,
+        info: Union[JobInfo, JobResults],
+        status=Status.READY.value,
     ):
         msg = info.encode()
         key = str(info.uuid)

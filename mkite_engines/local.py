@@ -154,6 +154,7 @@ class LocalProducer(LocalEngine, BaseProducer):
         self,
         queue: str,
         info: Union[JobInfo, JobResults],
+        status=Status.READY.value,
         name: str = None,
     ):
         if name is None and self.is_info(info):
