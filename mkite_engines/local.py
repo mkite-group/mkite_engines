@@ -90,6 +90,7 @@ class LocalEngine(BaseEngine):
 
     def item_path(self, queue: str, item: os.PathLike):
         name = os.path.basename(item)
+        queue = self.format_queue_name(queue)
         dst = self.abspath(queue)
         return os.path.join(dst, name)
 
@@ -119,11 +120,10 @@ class LocalEngine(BaseEngine):
         if isinstance(queue, Status):
             queue = queue.value
 
-        queue = self.format_queue_name(queue)
-
-        if queue not in self.queues:
+        if self.remove_queue_prefix(queue) not in self.queues:
             raise ValueError(f"Invalid queue {queue}")
 
+        queue = self.format_queue_name(queue)
         return self.abspath(queue)
 
     def list_queue(self, queue: str) -> List[str]:
@@ -158,8 +158,6 @@ class LocalProducer(LocalEngine, BaseProducer):
     ):
         if queue not in self.queues and add_queue:
             self.add_queue(queue)
-
-        queue = self.get_queue_path(queue)
 
         if not self.is_path(item):
             raise ValueError(f"Cannot submit {item}: invalid type")
