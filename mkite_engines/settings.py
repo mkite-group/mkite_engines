@@ -12,4 +12,8 @@ class EngineSettings(BaseSettings):
     @classmethod
     def from_file(cls, filename: FilePath):
         data = load_config(filename)
+
+        if "_module" in data:
+            data.pop("_module")
+
         return cls(**data)
