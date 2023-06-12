@@ -76,6 +76,12 @@ class RedisEngine(BaseEngine):
         queues = [k.replace(self.qprefix, "") for k in queues]
         return queues
 
+    def add_queue(self, name: str):
+        """Empty queues do not have to be created in Redis.
+        This method exists for compatibility with other engines.
+        """
+        pass
+
 
 class RedisProducer(RedisEngine, BaseProducer):
     def push(self, queue: str, item: str):
