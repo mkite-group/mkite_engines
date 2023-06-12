@@ -22,6 +22,7 @@ class BaseEngine(ABC):
     As mkite and mkwind are not coupled directly, an intermediate engine has to
     act as the middleware for their communication.
     """
+
     SETTINGS_CLS = EngineSettings
 
     @classmethod
@@ -61,6 +62,7 @@ class BaseEngine(ABC):
         """Returns True if `item` is an instance of JobInfo or JobResults"""
         return isinstance(item, (JobInfo, JobResults))
 
+
 class BaseProducer(BaseEngine):
     @abstractmethod
     def push(self, queue: str, item: str):
@@ -78,11 +80,11 @@ class BaseConsumer(BaseEngine):
     def get_n(self, queue: str, n: int = 1000):
         """Get n items from the queue"""
         i = 0
-        while (i < n):
+        while i < n:
             item = self.get(queue)
             if not item:
                 break
-            
+
             yield item
             i = i + 1
 

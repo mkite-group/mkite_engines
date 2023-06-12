@@ -51,7 +51,7 @@ class RedisEngine(BaseEngine):
         port: int,
         password: str = None,
         queue_prefix: str = "queue:",
-        **kwargs
+        **kwargs,
     ):
         self.r = redis.Redis(host=host, port=port, password=password, **kwargs)
         self.qprefix = queue_prefix

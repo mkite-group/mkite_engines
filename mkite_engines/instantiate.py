@@ -29,9 +29,7 @@ def get_engine_class(module: str, role: EngineRoles):
     return _cls
 
 
-def instantiate_from_dict(
-    settings: dict, role: EngineRoles, **kwargs
-):
+def instantiate_from_dict(settings: dict, role: EngineRoles, **kwargs):
     _module_key: str = "_module"
     _settings = {
         **settings,
@@ -50,8 +48,6 @@ def instantiate_from_dict(
     return cls(**_settings)
 
 
-def instantiate_from_path(
-    path: os.PathLike, role: EngineRoles, **kwargs
-):
+def instantiate_from_path(path: os.PathLike, role: EngineRoles, **kwargs):
     data = load_config(path)
     return instantiate_from_dict(data, role, **kwargs)

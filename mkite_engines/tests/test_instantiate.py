@@ -8,9 +8,14 @@ from mkite_engines.settings import EngineSettings
 from mkite_engines.status import Status
 from mkite_engines.local import LocalProducer, LocalConsumer
 
-from mkite_engines.instantiate import get_engine_class, instantiate_from_dict, instantiate_from_path
+from mkite_engines.instantiate import (
+    get_engine_class,
+    instantiate_from_dict,
+    instantiate_from_path,
+)
 
 SETTINGS_PATH = resource_filename("mkite_engines.tests.configs", "local.yaml")
+
 
 class TestInstantiate(ut.TestCase):
     def setUp(self):

@@ -116,7 +116,8 @@ class LocalEngine(BaseEngine):
 
     def list_queue_names(self) -> List[str]:
         return [
-            f for f in os.listdir(self.root_path)
+            f
+            for f in os.listdir(self.root_path)
             if os.path.isdir(os.path.join(self.root_path, f))
         ]
 
