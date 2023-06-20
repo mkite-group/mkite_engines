@@ -16,6 +16,10 @@ class LocalEngineSettings(EngineSettings):
         os.path.expanduser("~/queue"),
         description="Where the jobs to be built will be placed",
     )
+    move: bool = Field(
+        False,
+        description="If True, moves the paths when pushing",
+    )
 
 
 class LocalEngine(BaseEngine):
