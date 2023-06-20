@@ -32,7 +32,7 @@ class LocalEngine(BaseEngine):
         root_path: os.PathLike,
         move: bool = False,
         return_abspath: bool = True,
-        queue_prefix: str = "queue:",
+        queue_prefix: str = "queue-",
     ):
         self.root_path = os.path.abspath(root_path)
         self.mkdir(self.root_path)
