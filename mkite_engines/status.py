@@ -10,3 +10,11 @@ class Status(Enum):
     PARSING = "parsing"
     ANY = "any"
     ARCHIVE = "archive"
+
+    @classmethod
+    def values(cls):
+        return {k.value for k in Status}
+
+    @classmethod
+    def has_value(cls, value):
+        return value in cls.values()
