@@ -81,8 +81,10 @@ class RedisEngine(BaseEngine):
 
 
 class RedisProducer(RedisEngine, BaseProducer):
-    def push(self, queue: str, item: str):
+    def push(self, queue: str, item: str, left: bool = True):
         queue = self.format_queue_name(queue)
+        if left:
+            return self.r.lpush(queue, item)
         return self.r.rpush(queue, item)
 
     def push_info(
