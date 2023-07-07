@@ -16,5 +16,13 @@ dependencies = [
     "fakeredis",
 ]
 
+[project.scripts]
+kiteng = "mkite_engines.cli.kiteng:kiteng"
+
+[options.extras_require.optional]
+shell = [
+    "ipython",
+]
+
 [tool.setuptools]
 packages = ["mkite_engines"]
