@@ -18,11 +18,20 @@ def summary(engine):
     default=None,
     help="path to the yaml file configuring the Redis engine",
 )
-def redis(settings):
+@click.option(
+    "-i",
+    "--interactive",
+    is_flag=True,
+    default=False,
+    help="If True, opens an ipython shell",
+)
+def redis(settings, interactive):
     from IPython import embed
 
     engine = RedisEngine.from_file(settings)
     summary(engine)
-    r = engine.r
 
-    embed()
+    if interactive:
+        r = engine.r
+
+        embed()
