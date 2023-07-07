@@ -3,6 +3,13 @@ import click
 from mkite_engines.redis import RedisEngine
 
 
+def summary(engine):
+    queues = engine.list_queue_names()
+    for q in queues:
+        res = engine.list_queue(q)
+        print(f"{q}: {len(res)}")
+
+
 @click.command("redis")
 @click.option(
     "-s",
@@ -15,6 +22,7 @@ def redis(settings):
     from IPython import embed
 
     engine = RedisEngine.from_file(settings)
+    summary(engine)
     r = engine.r
 
     embed()
