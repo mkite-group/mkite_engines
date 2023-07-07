@@ -53,8 +53,18 @@ class RedisEngine(BaseEngine):
         queue_prefix: str = "queue:",
         **kwargs,
     ):
-        self.r = redis.Redis(host=host, port=port, password=password, **kwargs)
+        self.redis_kwargs = {
+            "host": host,
+            "port": port,
+            "password": password,
+            "health_check_interval": 30,
+            **kwargs,
+        }
         self.qprefix = queue_prefix
+
+    @property
+    def r(self):
+        return redis.Redis(self.redis_kwargs)
 
     def list_queue(self, queue: str) -> List[str]:
         queue = self.format_queue_name(queue)
