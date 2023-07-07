@@ -61,10 +61,24 @@ class RedisEngine(BaseEngine):
             **kwargs,
         }
         self.qprefix = queue_prefix
+        self._r = None
 
     @property
     def r(self):
-        return redis.Redis(self.redis_kwargs)
+        if self._r is None:
+            self._r = self._get_new_redis()
+
+        try:
+            self._r.ping()
+
+        except redis.ConnectionError:
+            del self._r
+            self._r = self._get_new_redis()
+
+        return self._r
+
+    def _get_new_redis(self):
+        return redis.Redis(**self.redis_kwargs)
 
     def list_queue(self, queue: str) -> List[str]:
         queue = self.format_queue_name(queue)

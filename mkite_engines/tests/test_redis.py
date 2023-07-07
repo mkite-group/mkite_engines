@@ -24,11 +24,15 @@ def get_info():
     )
 
 
+def get_fake_redis(**kwargs):
+    return fakeredis.FakeStrictRedis(**kwargs)
+
+
 class TestRedisEngine(ut.TestCase):
-    @patch("redis.Redis", fakeredis.FakeStrictRedis)
     def setUp(self):
         self.settings = RedisEngineSettings()
         self.engine = RedisEngine.from_settings(self.settings)
+        self.engine._r = get_fake_redis(**self.engine.redis_kwargs)
 
     def tearDown(self):
         self.engine.r.flushall()
@@ -78,10 +82,10 @@ class TestRedisEngine(ut.TestCase):
 
 
 class TestRedisProducer(ut.TestCase):
-    @patch("redis.Redis", fakeredis.FakeStrictRedis)
     def setUp(self):
         self.settings = RedisEngineSettings()
         self.prod = RedisProducer.from_settings(self.settings)
+        self.prod._r = get_fake_redis(**self.prod.redis_kwargs)
 
     def tearDown(self):
         self.prod.r.flushall()
@@ -115,12 +119,14 @@ class TestRedisProducer(ut.TestCase):
 
 
 class TestRedisConsumer(ut.TestCase):
-    @patch("redis.Redis", fakeredis.FakeStrictRedis)
     def setUp(self):
         self.settings = RedisEngineSettings()
         self.prod = RedisProducer.from_settings(self.settings)
+
+        # connects both fakeredis caches
+        self.prod._r = get_fake_redis(**self.prod.redis_kwargs)
         self.cons = RedisConsumer.from_settings(self.settings)
-        self.cons.r = self.prod.r
+        self.cons._r = self.prod._r
 
     def tearDown(self):
         self.prod.r.flushall()
