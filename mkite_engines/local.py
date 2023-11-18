@@ -1,4 +1,5 @@
 import os
+import time
 import shutil
 from typing import Sequence, List, Union
 from tempfile import TemporaryDirectory
@@ -20,6 +21,10 @@ class LocalEngineSettings(EngineSettings):
         False,
         description="If True, moves the paths when pushing",
     )
+    delay: float = Field(
+        2.0,
+        description="Delay between considering the local folder as ready",
+    )
 
 
 class LocalEngine(BaseEngine):
@@ -33,12 +38,14 @@ class LocalEngine(BaseEngine):
         move: bool = False,
         return_abspath: bool = True,
         queue_prefix: str = "queue-",
+        delay: float = 2.0,
     ):
         self.root_path = os.path.abspath(root_path)
         self.mkdir(self.root_path)
         self.move = move
         self.return_abspath = return_abspath
         self.qprefix = queue_prefix
+        self.delay = delay
 
     def __len__(self):
         return len(self.queues)
@@ -77,8 +84,10 @@ class LocalEngine(BaseEngine):
             path = self.abspath(path)
 
         elif not str(path).startswith(self.root_path):
-            raise ValueError("Not allowed to delete a file outside \
-                of the path of the queue.")
+            raise ValueError(
+                "Not allowed to delete a file outside \
+                of the path of the queue."
+            )
 
         if not os.path.exists(path):
             raise FileNotFoundError(f"Path {path} does not exist")
@@ -197,6 +206,15 @@ class LocalProducer(LocalEngine, BaseProducer):
 class LocalConsumer(LocalEngine, BaseConsumer):
     """Consumer that uses folders as queue"""
 
+    def is_valid(self, path: os.PathLike):
+        if os.path.basename(path).startswith("."):
+            return False
+
+        mtime = os.path.getmtime(path)
+        now = time.time()
+
+        return (mtime - now) > self.delay
+
     def get(self, queue: str) -> (str, str):
         """Get an item from the queue"""
         path = self.get_queue_path(queue)
@@ -220,7 +238,7 @@ class LocalConsumer(LocalEngine, BaseConsumer):
 
         i = 0
         for entry in os.scandir(path):
-            if entry.name.startswith("."):
+            if not self.is_valid(entry.path):
                 continue
 
             if i >= n:
@@ -239,7 +257,9 @@ class LocalConsumer(LocalEngine, BaseConsumer):
 
         return None, None
 
-    def get_info(self, queue: str, info_cls=JobInfo) -> (str, Union[JobInfo, JobResults]):
+    def get_info(
+        self, queue: str, info_cls=JobInfo
+    ) -> (str, Union[JobInfo, JobResults]):
         """Get a JobInfo from the queue"""
         key, path = self.get(queue)
         if path is None:
