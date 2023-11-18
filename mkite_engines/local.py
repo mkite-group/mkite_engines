@@ -213,7 +213,7 @@ class LocalConsumer(LocalEngine, BaseConsumer):
         mtime = os.path.getmtime(path)
         now = time.time()
 
-        return (mtime - now) > self.delay
+        return (now - mtime) > self.delay
 
     def get(self, queue: str) -> (str, str):
         """Get an item from the queue"""
