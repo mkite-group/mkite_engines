@@ -2,7 +2,7 @@ import json
 import redis
 
 from typing import List, Union
-from pydantic import Field, DirectoryPath, BaseModel
+from pydantic import ConfigDict, Field, DirectoryPath, BaseModel
 from mkite_engines.settings import EngineSettings
 from mkite_core.models import JobInfo, JobResults, Status
 
@@ -19,18 +19,15 @@ class RedisEngineSettings(EngineSettings):
         description="port of the Redis server",
     )
     password: str = Field(
-        None,
-        description="port of the Redis server",
+        "abc",
+        description="password of the Redis server",
     )
     ssl: bool = Field(False, description="whether to use ssl when connecting")
     ssl_cert_reqs: str = Field(
         "required",
         description="requirements of ssl certificates",
     )
-
-    class Config:
-        env_prefix = "REDIS_"
-        case_sensitive = False
+    model_config = ConfigDict(env_prefix="REDIS_", case_sensitive=False)
 
 
 class RedisInfoSchema(BaseModel):
@@ -38,7 +35,7 @@ class RedisInfoSchema(BaseModel):
     status: str
 
     def items(self):
-        return self.dict().items()
+        return self.model_dump().items()
 
 
 class RedisEngine(BaseEngine):
@@ -48,7 +45,7 @@ class RedisEngine(BaseEngine):
         self,
         host: str,
         port: int,
-        password: str = None,
+        password: str = "abc",
         queue_prefix: str = "queue:",
         **kwargs,
     ):

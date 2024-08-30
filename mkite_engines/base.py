@@ -36,7 +36,7 @@ class BaseEngine(ABC):
     @classmethod
     def from_settings(cls, settings: EngineSettings) -> "BaseEngine":
         """Creates the engine from a pydantic EngineSettings"""
-        return cls(**settings.dict())
+        return cls(**settings.model_dump())
 
     @classmethod
     def from_env(cls) -> "BaseEngine":
