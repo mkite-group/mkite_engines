@@ -4,9 +4,8 @@ import redis
 from typing import List, Union
 from pydantic import Field, DirectoryPath, BaseModel
 from mkite_engines.settings import EngineSettings
-from mkite_core.models import JobInfo, JobResults
+from mkite_core.models import JobInfo, JobResults, Status
 
-from .status import Status
 from .base import BaseEngine, BaseProducer, BaseConsumer
 
 

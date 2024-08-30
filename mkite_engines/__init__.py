@@ -1,4 +1,3 @@
-from .status import Status
 from .base import BaseEngine, BaseProducer, BaseConsumer, EngineRoles
 from .local import LocalEngine, LocalProducer, LocalConsumer
 from .redis import RedisEngine, RedisProducer, RedisConsumer

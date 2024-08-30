@@ -5,10 +5,9 @@ from typing import Sequence, List, Union
 from tempfile import TemporaryDirectory
 
 from pydantic import Field, DirectoryPath
-from mkite_core.models import JobInfo, JobResults
+from mkite_core.models import JobInfo, JobResults, Status
 from mkite_engines.settings import EngineSettings
 
-from .status import Status
 from .base import BaseEngine, BaseProducer, BaseConsumer
 
 

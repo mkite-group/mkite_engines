@@ -4,7 +4,7 @@ import fakeredis
 import unittest as ut
 from unittest.mock import patch
 
-from mkite_core.models import JobInfo, JobResults
+from mkite_core.models import JobInfo, JobResults, Status
 from mkite_engines.redis import (
     RedisEngineSettings,
     RedisInfoSchema,
@@ -12,7 +12,6 @@ from mkite_engines.redis import (
     RedisProducer,
     RedisConsumer,
 )
-from mkite_engines.status import Status
 
 
 def get_info():

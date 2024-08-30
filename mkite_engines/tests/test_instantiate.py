@@ -3,9 +3,9 @@ import unittest as ut
 from unittest.mock import patch
 from pkg_resources import resource_filename
 
+from mkite_core.models import Status
 from mkite_engines.base import EngineError, EngineRoles
 from mkite_engines.settings import EngineSettings
-from mkite_engines.status import Status
 from mkite_engines.local import LocalProducer, LocalConsumer
 
 from mkite_engines.instantiate import (
