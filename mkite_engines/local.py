@@ -11,6 +11,9 @@ from mkite_engines.settings import EngineSettings
 from .base import BaseEngine, BaseProducer, BaseConsumer
 
 
+LOCAL_QUEUE_PREFIX = "queue-"
+
+
 class LocalEngineSettings(EngineSettings):
     root_path: DirectoryPath = Field(
         os.path.expanduser("~/queue"),
@@ -36,7 +39,7 @@ class LocalEngine(BaseEngine):
         root_path: os.PathLike,
         move: bool = False,
         return_abspath: bool = True,
-        queue_prefix: str = "queue-",
+        queue_prefix: str = LOCAL_QUEUE_PREFIX,
         delay: float = 2.0,
     ):
         self.root_path = os.path.abspath(root_path)
