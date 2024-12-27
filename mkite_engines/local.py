@@ -209,6 +209,9 @@ class LocalConsumer(LocalEngine, BaseConsumer):
     """Consumer that uses folders as queue"""
 
     def is_valid(self, path: os.PathLike):
+        if not os.path.exists(path):
+            return False
+
         if os.path.basename(path).startswith("."):
             return False
 
