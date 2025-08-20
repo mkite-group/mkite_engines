@@ -1,7 +1,7 @@
 import json
 import redis
 
-from typing import List, Union
+from typing import List, Union, Optional
 from pydantic import ConfigDict, Field, DirectoryPath, BaseModel
 from mkite_engines.settings import EngineSettings
 from mkite_core.models import JobInfo, JobResults, Status
@@ -18,7 +18,7 @@ class RedisEngineSettings(EngineSettings):
         6379,
         description="port of the Redis server",
     )
-    username: str = Field(
+    username: Optional[str] = Field(
         "abc", 
         description="username of the Redis server"
     )
@@ -86,18 +86,10 @@ class RedisEngine(BaseEngine):
         return [i.decode() for i in items]
 
     def list_queue_names(self) -> List[str]:
-        c = 0
-        queues = []
-        p = self.qprefix + '*'
-        while True:
-            c, ks = self.r.scan(c, match = p ,count=200)
-            for k in ks:
-                k = k.decode() if isinstance(k, bytes) else k
-                queues.append(self.remove_queue_prefix(k))
-            if c == 0: 
-                break
-        return queues
-        
+        queues = self.r.keys(self.qprefix + "*")
+        queues = [k.decode() for k in queues]
+        queues = [self.remove_queue_prefix(k) for k in queues]
+        return queues        
 
     def add_queue(self, name: str):
         """Empty queues do not have to be created in Redis.
