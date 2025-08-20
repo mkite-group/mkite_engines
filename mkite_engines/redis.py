@@ -89,7 +89,7 @@ class RedisEngine(BaseEngine):
         queues = self.r.keys(self.qprefix + "*")
         queues = [k.decode() for k in queues]
         queues = [self.remove_queue_prefix(k) for k in queues]
-        return queues        
+        return queues
 
     def add_queue(self, name: str):
         """Empty queues do not have to be created in Redis.
