@@ -1,7 +1,7 @@
 import json
 import redis
 
-from typing import List, Union
+from typing import List, Union, Optional
 from pydantic import ConfigDict, Field, DirectoryPath, BaseModel
 from mkite_engines.settings import EngineSettings
 from mkite_core.models import JobInfo, JobResults, Status
@@ -17,6 +17,10 @@ class RedisEngineSettings(EngineSettings):
     port: int = Field(
         6379,
         description="port of the Redis server",
+    )
+    username: Optional[str] = Field(
+        "abc", 
+        description="username of the Redis server"
     )
     password: str = Field(
         "abc",
