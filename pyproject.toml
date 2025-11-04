@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mkite_engines"
-version = "24.09.05"
+version = "25.11.03"
 description = "engines for connecting messages to/from mkite"
 authors = [{name = "Daniel Schwalbe-Koda", email = "dskoda@ucla.edu"}]
 readme = "README.md"
